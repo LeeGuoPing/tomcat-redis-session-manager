@@ -1,9 +1,9 @@
 package com.orangefunction.tomcat.redissessions;
 
+import org.apache.catalina.Context;
 import org.apache.catalina.Lifecycle;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleListener;
-import org.apache.catalina.util.LifecycleSupport;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Loader;
 import org.apache.catalina.Valve;
@@ -275,7 +275,7 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
     setState(LifecycleState.STARTING);
 
     Boolean attachedToValve = false;
-    for (Valve valve : getContainer().getPipeline().getValves()) {
+    for (Valve valve : getContext().getPipeline().getValves()) {
       if (valve instanceof RedisSessionHandlerValve) {
         this.handlerValve = (RedisSessionHandlerValve) valve;
         this.handlerValve.setRedisSessionManager(this);
@@ -303,6 +303,9 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
     initializeDatabaseConnection();
 
     setDistributable(true);
+  }
+
+  private void setDistributable(boolean b) {
   }
 
 
@@ -714,8 +717,8 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
 
     Loader loader = null;
 
-    if (getContainer() != null) {
-      loader = getContainer().getLoader();
+    if (getContext() != null) {
+      loader = getContext().getLoader();
     }
 
     ClassLoader classLoader = null;
@@ -873,6 +876,15 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
   public void setJmxNamePrefix(String jmxNamePrefix) {
     this.connectionPoolConfig.setJmxNamePrefix(jmxNamePrefix);
   }
+
+  @Deprecated
+  public int getMaxInactiveInterval() {
+      Context context = getContext();
+      if (context == null) {
+          return -1;
+      }
+      return context.getSessionTimeout() * 60;
+    }
 }
 
 class DeserializedSessionContainer {
