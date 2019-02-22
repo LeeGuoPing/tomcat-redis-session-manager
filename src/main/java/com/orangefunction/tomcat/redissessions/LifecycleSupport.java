@@ -10,7 +10,7 @@ import org.apache.catalina.LifecycleListener;
 /**
  * 
  * @author liguoping
- * @description tomcat 8.0 中复制的类
+ * @description copy from tomcat 8.0
  * @time 2019/2/22 14:49
  * @version 1.0
  *
