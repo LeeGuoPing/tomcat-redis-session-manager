@@ -298,7 +298,7 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
       throw new LifecycleException(e);
     }
 
-    log.info("Will expire sessions after " + getMaxInactiveInterval() + " seconds");
+    log.info("Will expire sessions after " + getMaxInactiveInterval(null) + " seconds");
 
     initializeDatabaseConnection();
 
@@ -370,7 +370,7 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
         session.setNew(true);
         session.setValid(true);
         session.setCreationTime(System.currentTimeMillis());
-        session.setMaxInactiveInterval(getMaxInactiveInterval());
+        session.setMaxInactiveInterval(getMaxInactiveInterval(session));
         session.setId(sessionId);
         session.tellNew();
       }
@@ -538,7 +538,7 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
 
       session.setId(id);
       session.setNew(false);
-      session.setMaxInactiveInterval(getMaxInactiveInterval());
+      session.setMaxInactiveInterval(getMaxInactiveInterval(session));
       session.access();
       session.setValid(true);
       session.resetDirtyTracking();
@@ -626,8 +626,8 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
         log.trace("Save was determined to be unnecessary");
       }
 
-      log.trace("Setting expire timeout on session [" + redisSession.getId() + "] to " + getMaxInactiveInterval());
-      jedis.expire(binaryId, getMaxInactiveInterval());
+      log.trace("Setting expire timeout on session [" + redisSession.getId() + "] to " + getMaxInactiveInterval(session));
+      jedis.expire(binaryId, getMaxInactiveInterval(session));
 
       error = false;
 
@@ -877,13 +877,24 @@ public class RedisSessionManager extends ManagerBase implements Lifecycle {
     this.connectionPoolConfig.setJmxNamePrefix(jmxNamePrefix);
   }
 
-  @Deprecated
-  public int getMaxInactiveInterval() {
-      Context context = getContext();
-      if (context == null) {
-          return -1;
-      }
-      return context.getSessionTimeout() * 60;
+  public int getMaxInactiveInterval(Session session) {
+        // session.setMaxInactiveInterval(2)
+        if (session != null && session.getMaxInactiveInterval() > 0) {
+            return session.getMaxInactiveInterval();
+        }
+
+        // get session from tomcat context.xml
+//        if(this.maxInactiveInterval > 0){
+//            return maxInactiveInterval;
+//        }
+
+        // web.xml sessionTimeout default 30 minutes
+        Context context = getContext();
+        if (context == null) {
+            return -1;
+        }
+        return context.getSessionTimeout() * 60;
+
     }
 }
 
